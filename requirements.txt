@@ -1,4 +1,4 @@
-tensorflow==2.6.2
+#tensorflow==2.6.2
 nltk==3.6.2
 gensim==3.7.2
 scikit-learn==0.24.2
