@@ -1,6 +1,4 @@
-from re import U
 import numpy as np
-import os
 #from tqdm import tqdm
 
 # ----------------------------------------------------------------------------------------------------------------------
@@ -102,7 +100,7 @@ def train():
     w = np.random.normal(0, 1, (N, 1)).reshape(101,)
 
     lr = .01
-    n_epochs = 300
+    n_epochs = 50
     batch_size = 10
 
     n_batches = np.ceil(len(datapoints) / batch_size)
@@ -133,7 +131,7 @@ def train():
 
         # print matrics
         print("epoch={}/{}\n\tsquare_loss(dev)={:.2f}\n\tsquare_loss(test)={:.2f}\n\tacc(dev)={:.2f}\n\tacc(test)={:.2f}\n".format(
-            epoch, n_epochs,
+            epoch+1, n_epochs,
             square_loss(datapoints_dev, w), 
             square_loss(datapoints_test, w), 
             accuracy(datapoints_dev, w),
