@@ -1,5 +1,7 @@
 import numpy as np
-from nltk.tokenize import word_tokenize
+import nltk
+nltk.download('punkt')
+
 
 # ------------------------------------------------
 #             1.1 Data Formats
@@ -38,13 +40,14 @@ def data_reader(filename):
 def load_token_embeddings(filename):
     token_embeddings = dict()
     with open(filename, encoding="utf-8") as f:
+        next(f) # skip first line
         for i, line in enumerate(f):
             if i == 40000:
                 # only read the first 40k lines
                 break
-            columns = line.split("\t")
+            columns = line.split(" ")
             # print(columns)
-            token_embeddings[columns[0]] = np.array(columns[-1:])
+            token_embeddings[columns[0]] = np.array(columns[1:], dtype='f')
     return token_embeddings
 
 
@@ -54,28 +57,40 @@ def tokenize_sentences(first_sentences, second_sentences):
     tokenized_second_sentences = list()
 
     for first_sentence, second_sentence in zip(first_sentences, second_sentences):
-        tokenized_first_sentences.append(word_tokenize(first_sentence))
-        tokenized_second_sentences.append(word_tokenize(second_sentence))
+        tokenized_first_sentences.append(nltk.word_tokenize(first_sentence))
+        tokenized_second_sentences.append(nltk.word_tokenize(second_sentence))
 
     return tokenized_first_sentences, tokenized_second_sentences
 
 
-def embed_tokens(tokenized_sentences, token_embeddings):
-    embedded_sentences = []
+def embed_tokens(tokens, token_embeddings):
+    """
+    maps all tokens to their embeddings (with np.zero fallback)
+    """
+    embedded_tokens = []
+
+    for token in tokens:
+        if token in token_embeddings:
+            embedded_tokens.append(token_embeddings[token])
+        else:
+            embedded_tokens.append(np.zeros(300))
+
+    return embedded_tokens
+
+def create_average_sentence_embeddings(tokenized_sentences, token_embeddings):
+    average_sentence_embeddings = []
 
     for tokenized_sentence in tokenized_sentences:
-        embedded_tokens = list()
-        for token in tokenized_sentence:
+        sentence_embedding = embed_tokens(tokenized_sentence, token_embeddings)
 
-            if token in token_embeddings:
-                embedded_sentences.append(token_embeddings[token])
-            else:
-                embedded_sentences.append(np.zeros(300))
+        average_sentence_embedding = np.zeros(300)
+        for token_embedding in sentence_embedding:
+            average_sentence_embedding += token_embedding
+        average_sentence_embedding /= len(tokenized_sentence)
 
-        embedded_sentences.append(embedded_tokens)
+        average_sentence_embeddings.append(average_sentence_embedding)
 
-    return embedded_sentences
-
+    return average_sentence_embeddings
 
 # ------------------------------------------------
 #             1.3 Scoring the Similarity
@@ -93,12 +108,16 @@ if __name__ == "__main__":
     train_data = "data-train.txt"
     scores, first_sentences, second_sentences = data_reader(train_data)
 
-    # # task 1.1
-    # print(first_sentence[0], second_sentence[0], scores[0])
+    # output task 1.1
+    print(first_sentences[0], second_sentences[0], scores[0])
 
     # task 1.2
     token_embeddings = load_token_embeddings("wiki-news-300d-1M.vec")
-    tokenized_first_sentences, tokenized_second_sentences = tokenize_sentences(
-        first_sentences, second_sentences, token_embeddings
-    )
+    tokenized_first_sentences, tokenized_second_sentences = tokenize_sentences(first_sentences, second_sentences)
+    
+    # output b)
     print(tokenized_first_sentences[:1])
+
+    # output c)
+    first_sentence_average_embedding = create_average_sentence_embeddings(tokenized_first_sentences[:1], token_embeddings)
+    print(first_sentence_average_embedding[0][:20])
