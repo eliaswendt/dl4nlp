@@ -69,7 +69,18 @@ filters = 75
 kernel_size = 3  # Keras uses a different definition where a kernel size of 3 means that 3 words are convolved at each step
 
 model = Sequential()
+
 model.add(Embedding(vocab_size, embedding_dims, input_length=pad_length))
+model.add(
+    Concatenate(axis=1)([
+        Input(shape=(300)),
+        Input(shape=(300))
+    ])
+)
+model.add(Dropout(.3))
+model.add(Dense(300, activation='relu'))
+model.add(Dropout(.3))
+model.add(Dense())
 
 ####################################
 #                                  #
