@@ -115,8 +115,6 @@ def task_3_prepare_data(token_embeddings):
 
 def task_3(token_embeddings):
 
-    # print(f"train[0]={train[0]}")
-
     train, dev, test = task_3_prepare_data(token_embeddings)
 
     input_1 = Input(shape=(300,))
@@ -132,8 +130,19 @@ def task_3(token_embeddings):
     model.summary()
 
     model.compile(loss='mse', optimizer='adam', metrics=['mse'])
-    model.fit(x=[train[1], train[2]], y=train[0], batch_size=100, epochs=300, verbose=True)
-    model.evaluate()
+    model.fit(
+        x=[train[1], train[2]], 
+        y=train[0], 
+        batch_size=100, 
+        epochs=300, 
+        verbose=1
+    )
+
+    # returns (loss, mse)
+    return model.evaluate(
+        x=[dev[1], dev[2]],
+        y=dev[0]
+    )
 
 ####################################
 #                                  #
@@ -144,22 +153,23 @@ def task_3(token_embeddings):
 
 if __name__ == "__main__":
 
-    # train_data = "data-train.txt"
-    # scores, first_sentences, second_sentences = data_reader(train_data)
+    train_data = "data-train.txt"
+    scores, first_sentences, second_sentences = data_reader(train_data)
 
     # # output task 1.1
-    # print(first_sentences[0], second_sentences[0], scores[0])
+    print(first_sentences[0], second_sentences[0], scores[0])
 
     # # task 1.2
     token_embeddings = load_token_embeddings("wiki-news-300d-1M.vec")
-    # tokenized_first_sentences, tokenized_second_sentences = tokenize_sentences(first_sentences, second_sentences)
+    tokenized_first_sentences = tokenize_sentences(first_sentences)
+    tokenized_second_sentences = tokenize_sentences(second_sentences)
     
     # # output b)
-    # print(tokenized_first_sentences[:1])
+    print(tokenized_first_sentences[:1])
 
     # # output c)
-    # first_sentence_average_embedding = create_average_sentence_embeddings(tokenized_first_sentences[:1], token_embeddings)
-    # print(first_sentence_average_embedding[0][:20])
+    first_sentence_average_embedding = create_average_sentence_embeddings(tokenized_first_sentences[:1], token_embeddings)
+    print(first_sentence_average_embedding[0][:20])
 
     # task 1.3
     task_3(token_embeddings)
