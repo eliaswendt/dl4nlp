@@ -84,9 +84,9 @@ model.add(Dense(20, activation='softmax'))
 
 ####################################
 
-#model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
-#model.fit(train_x, train_y, batch_size=batch_size, epochs=epochs, verbose=train_verbose)
-#print('Accuracy of simple CNN: %f\n' % model.evaluate(dev_x, dev_y, verbose=0)[1])
+model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
+model.fit(train_x, train_y, batch_size=batch_size, epochs=epochs, verbose=train_verbose)
+print('[T 2.1]: Accuracy of simple CNN: %f\n' % model.evaluate(dev_x, dev_y, verbose=0)[1])
 
 # print model summary 
 model.summary()
@@ -138,7 +138,7 @@ model.fit(dev_x, dev_y, batch_size=batch_size, epochs=epochs, verbose=train_verb
 # load model checkpoint before eval
 model.load_weights(checkpoint_filepath)
 print(
-    'dev acc.: {}, test acc.: {}'.format(
+    '[T 2.3]: dev acc.: {}, test acc.: {}'.format(
         model.evaluate(dev_x, dev_y, verbose=0)[1],
         model.evaluate(test_x, test_y, verbose=0)[1]
     )
