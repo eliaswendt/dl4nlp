@@ -71,39 +71,80 @@ kernel_size = 3  # Keras uses a different definition where a kernel size of 3 me
 model = Sequential()
 
 model.add(Embedding(vocab_size, embedding_dims, input_length=pad_length))
-model.add(
-    Concatenate(axis=1)([
-        Input(shape=(300)),
-        Input(shape=(300))
-    ])
-)
-model.add(Dropout(.3))
-model.add(Dense(300, activation='relu'))
-model.add(Dropout(.3))
-model.add(Dense())
 
 ####################################
 
 # add convolutional layer with 75 filters and filter size = 2, ReLU activation fxn
-model.add(Conv1d(75, 2, activation='relu'))
+model.add(Conv1D(75, 2, activation='relu'))
 # global max pooling layer
-model.add(GlobalMaxPooling1d(pool_size=2))
-model.add(Flatten())
+model.add(GlobalMaxPooling1D())
+#model.add(Flatten())
 # softmax output layer
 model.add(Dense(20, activation='softmax'))
 
 ####################################
 
-model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
-model.fit(train_x, train_y, batch_size=batch_size, epochs=epochs, verbose=train_verbose)
-print('Accuracy of simple CNN: %f\n' % model.evaluate(dev_x, dev_y, verbose=0)[1])
+#model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
+#model.fit(train_x, train_y, batch_size=batch_size, epochs=epochs, verbose=train_verbose)
+#print('Accuracy of simple CNN: %f\n' % model.evaluate(dev_x, dev_y, verbose=0)[1])
 
 # print model summary 
-print(model.summary())
+model.summary()
 
 # ------------------------------------------------
 #                2.3 Early Stopping
 # ------------------------------------------------
+
+epochs = 50
+checkpoint_filepath = 'checkpoint_best'
+monitor = 'loss'
+
+
+model = Sequential()
+model.add(Embedding(vocab_size, embedding_dims, input_length=pad_length))
+
+# add convolutional layer with 75 filters and filter size = 2, ReLU activation fxn
+model.add(Conv1D(75, 2, activation='relu'))
+# global max pooling layer
+model.add(GlobalMaxPooling1D())
+#model.add(Flatten())
+# softmax output layer
+model.add(Dense(20, activation='softmax'))
+
+
+save_best_checkpoint_callback = tf.keras.callbacks.ModelCheckpoint(
+    checkpoint_filepath,
+    monitor=monitor,
+    verbose=0,
+    save_best_only=True,
+    save_weights_only=True,
+    mode='auto',
+    save_freq='epoch',
+)
+
+early_stopping_callback = tf.keras.callbacks.EarlyStopping(
+    monitor=monitor,
+    min_delta=0,
+    patience=2,
+    verbose=0,
+    mode='auto',
+    baseline=None,
+    restore_best_weights=False # we do this manually with save_best_checkpoint_callback and model.load()
+)
+
+model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
+model.fit(dev_x, dev_y, batch_size=batch_size, epochs=epochs, verbose=train_verbose, callbacks=[save_best_checkpoint_callback, early_stopping_callback])
+
+# load model checkpoint before eval
+model.load_weights(checkpoint_filepath)
+print(
+    'dev acc.: {}, test acc.: {}'.format(
+        model.evaluate(dev_x, dev_y, verbose=0)[1],
+        model.evaluate(test_x, test_y, verbose=0)[1]
+    )
+)
+
+
 
 ####################################
 #                                  #
