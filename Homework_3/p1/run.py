@@ -144,12 +144,6 @@ def task_3(token_embeddings):
         y=dev[0]
     )
 
-####################################
-#                                  #
-#   add your implementation here   #
-#                                  #
-####################################
-
 
 if __name__ == "__main__":
 
@@ -167,7 +161,7 @@ if __name__ == "__main__":
     # # output b)
     print(tokenized_first_sentences[:1])
 
-    # # output c)
+    # # output d)
     first_sentence_average_embedding = create_average_sentence_embeddings(tokenized_first_sentences[:1], token_embeddings)
     print(first_sentence_average_embedding[0][:20])
 

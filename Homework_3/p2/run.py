@@ -83,14 +83,23 @@ model.add(Dropout(.3))
 model.add(Dense())
 
 ####################################
-#                                  #
-#   add your implementation here   #
-#                                  #
+
+# add convolutional layer with 75 filters and filter size = 2, ReLU activation fxn
+model.add(Conv1d(75, 2, activation='relu'))
+# global max pooling layer
+model.add(GlobalMaxPooling1d(pool_size=2))
+model.add(Flatten())
+# softmax output layer
+model.add(Dense(20, activation='softmax'))
+
 ####################################
 
 model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
 model.fit(train_x, train_y, batch_size=batch_size, epochs=epochs, verbose=train_verbose)
 print('Accuracy of simple CNN: %f\n' % model.evaluate(dev_x, dev_y, verbose=0)[1])
+
+# print model summary 
+print(model.summary())
 
 # ------------------------------------------------
 #                2.3 Early Stopping
