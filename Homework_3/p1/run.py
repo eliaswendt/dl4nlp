@@ -151,7 +151,7 @@ if __name__ == "__main__":
     scores, first_sentences, second_sentences = data_reader(train_data)
 
     # # output task 1.1
-    print(first_sentences[0], second_sentences[0], scores[0])
+    print(f"[T 1.1]: sentence-pair: ({first_sentences[0]}, {second_sentences[0]}), score: {scores[0]}")
 
     # # task 1.2
     token_embeddings = load_token_embeddings("wiki-news-300d-1M.vec")
@@ -159,11 +159,12 @@ if __name__ == "__main__":
     tokenized_second_sentences = tokenize_sentences(second_sentences)
     
     # # output b)
-    print(tokenized_first_sentences[:1])
+    print(f"[T 1.2 b)]: {tokenized_first_sentences[0]}")
 
     # # output d)
-    first_sentence_average_embedding = create_average_sentence_embeddings(tokenized_first_sentences[:1], token_embeddings)
-    print(first_sentence_average_embedding[0][:20])
+    average_embedded_first_sentences = create_average_sentence_embeddings(tokenized_first_sentences[:1], token_embeddings)
+    print(f"[T 1.2 d)]: {average_embedded_first_sentences[0][:20]}")
 
     # task 1.3
-    task_3(token_embeddings)
+    loss, mse = task_3(token_embeddings)
+    print(f"[T 1.3 d)]: {mse}")
