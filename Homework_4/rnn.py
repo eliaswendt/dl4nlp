@@ -10,6 +10,10 @@ from keras.models import Sequential
 from keras.layers.embeddings import Embedding
 from keras.callbacks import Callback, ModelCheckpoint
 
+#import some additional packages
+from keras.layers import Dropout, LSTM, Bidirectional, Dense
+from keras.layers.wrappers import TimeDistributed
+
 from sklearn.metrics import f1_score
 
 from util import utils
@@ -75,6 +79,8 @@ def run(params):
     # ------------------------------------------------
 
     def build_model(embedding_matrix, max_sentence_length, number_of_classes):
+        dropout = params["dropout"]
+        n_neurons = params["hidden_units"]
         model = Sequential()
         model.add(Embedding(len(embedding_matrix),
                             len(embedding_matrix[0]),
@@ -84,17 +90,15 @@ def run(params):
                             trainable=False,
                             batch_input_shape=(batch_size, max_sentence_length)))
         if params["model"] == "lstm":
-            ####################################
-            #                                  #
-            #   add your implementation here   #
-            #                                  #
-            ####################################
+            model.add(Dropout(dropout))
+            model.add(LSTM(n_neurons, input_shape=(max_sentence_length, 1), return_sequences=True))
+            model.add(Dropout(dropout))
+            model.add(TimeDistributed(Dense(number_of_classes + 1, activation='softmax')))
         elif params["model"] == "bilstm":
-            ####################################
-            #                                  #
-            #   add your implementation here   #
-            #                                  #
-            ####################################
+            model.add(Dropout(dropout))
+            model.add(Bidirectional(LSTM(n_neurons, return_sequences=True), input_shape=(max_sentence_length, 1)))
+            model.add(Dropout(dropout))
+            model.add(TimeDistributed(Dense(number_of_classes + 1, activation='softmax')))
         else:
             raise Exception('Unknown model!')
 
