@@ -119,6 +119,44 @@ def run(params):
 
         def on_epoch_end(self, batch, logs={}):
 
+            # 1.: get predictions
+            y_hat_dev_padded = self.model.predict(X_dev, batch_size=batch_size)
+
+            # 2: flatten all outputs and remove padding
+            y_indices_flattened = []
+            y_hat_indices_flattened = []
+
+            for sentence_y, sentence_y_hat in zip(y_dev_padded, y_hat_dev_padded):
+                for token_y_index, token_y_hat_probabilities in zip(sentence_y, sentence_y_hat):
+
+                    # check if we encounter padding
+                    if token_y_index == 0:
+                        # continue with next sentence
+                        break
+
+                    token_y_hat_index = token_y_hat_probabilities.tolist().index(max(token_y_hat_probabilities))
+
+                    y_indices_flattened.append(index_to_label[token_y_index])
+                    y_hat_indices_flattened.append(index_to_label[token_y_hat_index])
+
+                    #print(f"y={token_y_index}, y_hat={token_y_hat_index}")
+                    
+
+            #print(len(y_indices_flattened), y_indices_flattened[0], len(y_hat_indices_flattened), y_hat_indices_flattened[0])
+
+            # 3.: compupte f1 score
+            #print(f"the following pos tags were not predicted: {set(y_indices_flattened) - set(y_hat_indices_flattened)}")
+            self.current_f1 = f1_score(y_indices_flattened, y_hat_indices_flattened, list(index_to_label.values()), average='macro')
+
+            # 4.: store best model
+            if self.best_f1 < self.current_f1:
+                # best is smaller than current -> update best and save model
+                self.best_f1 = self.current_f1
+
+                print(f"### Found new best_f1={self.best_f1}")
+                model.save(params['model_path'])
+
+
             ####################################
             #                                  #
             #   add your implementation here   #
@@ -132,6 +170,7 @@ def run(params):
             ####################################
 
             print(" F1 score %f" % (self.current_f1))
+            # exit()
             return
 
 
@@ -187,13 +226,13 @@ def run(params):
 
 
 if __name__=='__main__':
-    model_path = os.path.join("results", "lstm.model")
+    model_path = os.path.join("results", "bilstm.model")
     predict_file = os.path.join("results", "predictions.txt")
 
     params = {"model_path": model_path,
               "predict_file": predict_file,
-              "model": "lstm", # "lstm" or "bilstm"
-              "checkpointer": "acc",        # "acc" or "f1"
+              "model": "bilstm", # "lstm" or "bilstm"
+              "checkpointer": "f1",        # "acc" or "f1"
               "batch_size": 10,
               "dropout": 0.5,
               "hidden_units": 100,
