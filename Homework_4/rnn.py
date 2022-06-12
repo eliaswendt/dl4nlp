@@ -120,33 +120,20 @@ def run(params):
         def on_epoch_end(self, batch, logs={}):
 
             # 1.: get predictions
-            y_hat_dev_padded = self.model.predict(X_dev, batch_size=batch_size)
+            predictions = self.model.predict(X_dev, batch_size=batch_size)
 
-            # 2: flatten all outputs and remove padding
-            y_indices_flattened = []
-            y_hat_indices_flattened = []
+            # Compute F1 score for test set:
+            dev_pred = []
+            dev_truth = []
+            for sent_pred, sent_truth in zip(predictions, y_dev_index):
+                for lab, word_pred in zip(sent_truth, sent_pred):
+                    dev_truth.append(index_to_label[lab])
+                    dev_pred.append(index_to_label[word_pred.tolist().index(max(word_pred))])
+                    if word_pred.tolist().index(max(word_pred)) == 0:
+                        print("Warning, PADDING label got predicted!")
+            self.current_f1 = f1_score(dev_truth, dev_pred, list(index_to_label.values()),average='macro')
+            print("F1 score on test set: {}".format(self.current_f1))
 
-            for sentence_y, sentence_y_hat in zip(y_dev_padded, y_hat_dev_padded):
-                for token_y_index, token_y_hat_probabilities in zip(sentence_y, sentence_y_hat):
-
-                    # check if we encounter padding
-                    if token_y_index == 0:
-                        # continue with next sentence
-                        break
-
-                    token_y_hat_index = token_y_hat_probabilities.tolist().index(max(token_y_hat_probabilities))
-
-                    y_indices_flattened.append(index_to_label[token_y_index])
-                    y_hat_indices_flattened.append(index_to_label[token_y_hat_index])
-
-                    #print(f"y={token_y_index}, y_hat={token_y_hat_index}")
-                    
-
-            #print(len(y_indices_flattened), y_indices_flattened[0], len(y_hat_indices_flattened), y_hat_indices_flattened[0])
-
-            # 3.: compupte f1 score
-            #print(f"the following pos tags were not predicted: {set(y_indices_flattened) - set(y_hat_indices_flattened)}")
-            self.current_f1 = f1_score(y_indices_flattened, y_hat_indices_flattened, list(index_to_label.values()), average='macro')
 
             # 4.: store best model
             if self.best_f1 < self.current_f1:
@@ -238,4 +225,28 @@ if __name__=='__main__':
               "hidden_units": 100,
               "epochs": 10,
               "embeddings": "glove.6B.50d.txt"}
+
+    # testing out three different hyper parameter configs
+    params.update({
+        "hidden_units": 50,
+        "dropout": 0.3,
+        "batch_size": 1,
+    })
+    print(f"1/3: running with params={params}")
+    run(params)
+
+    params.update({
+        "hidden_units": 200,
+        "dropout": 0.7,
+        "batch_size": 20,
+    })
+    print(f"2/3: running with params={params}")
+    run(params)
+
+    params.update({
+        "hidden_units": 1000,
+        "dropout": 0.2,
+        "batch_size": 50,
+    })
+    print(f"3/3: running with params={params}")
     run(params)
