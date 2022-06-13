@@ -228,16 +228,16 @@ if __name__=='__main__':
 
     # testing out three different hyper parameter configs
     params.update({
-        "hidden_units": 50,
+        "hidden_units": 1000,
         "dropout": 0.3,
-        "batch_size": 1,
+        "batch_size": 10,
     })
     print(f"1/3: running with params={params}")
     run(params)
 
     params.update({
-        "hidden_units": 200,
-        "dropout": 0.7,
+        "hidden_units": 1000,
+        "dropout": 0.3,
         "batch_size": 20,
     })
     print(f"2/3: running with params={params}")
@@ -245,7 +245,7 @@ if __name__=='__main__':
 
     params.update({
         "hidden_units": 1000,
-        "dropout": 0.2,
+        "dropout": 0.3,
         "batch_size": 50,
     })
     print(f"3/3: running with params={params}")
