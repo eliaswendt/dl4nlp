@@ -1,7 +1,3 @@
-#google colab environment
-
-!pip install transformers datasets huggingface_hub==0.4 #need this otherwise error about package datascience
-
 import torch
 import numpy as np
 from torch.utils.data import DataLoader
