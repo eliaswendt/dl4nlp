@@ -1,3 +1,7 @@
+#google colab environment
+
+!pip install transformers datasets huggingface_hub==0.4 #need this otherwise error about package datascience
+
 import torch
 import numpy as np
 from torch.utils.data import DataLoader
@@ -117,7 +121,7 @@ plt.plot(loss_history)
 #fig.suptitle('test title')
 plt.xlabel('training step')
 plt.ylabel('loss')
-fig.savefig('training_loss.pdf')
+fig.savefig('training_loss_plot.pdf')
 
 # f1 per epoch
 fig = plt.figure()
@@ -125,7 +129,7 @@ plt.plot(f1_history)
 #fig.suptitle('test title')
 plt.xlabel('epoch')
 plt.ylabel('val f1 score')
-fig.savefig('f1_score.pdf')
+fig.savefig('validation_f1_score_plot.pdf')
 
 # acc per epoch
 fig = plt.figure()
@@ -133,7 +137,7 @@ plt.plot(accuracy_history)
 #fig.suptitle('test title')
 plt.xlabel('epoch')
 plt.ylabel('val accuracy')
-fig.savefig('accuracy.pdf')
+fig.savefig('validation_accuracy_plot.pdf')
 
 # ------------------------------------------------
 #            1.5 MODEL EVALUATION
