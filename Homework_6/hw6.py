@@ -1,3 +1,4 @@
+from typing import OrderedDict
 import torch
 import numpy as np
 from torch.utils.data import DataLoader
@@ -33,19 +34,89 @@ if __name__ == '__main__':
     'train': 'datasets/train_TriviaQA-web.jsonl.gz_prepared.jsonl', 
     'test': 'datasets/dev_TriviaQA-web.jsonl.gz_prepared.jsonl'
   })
+  print(dataset)
 
   torch.manual_seed(0) # set manual seed for reproducibility
 
-  # # TODO: register dataset in google sheet
   model_key = "huawei-noah/TinyBERT_General_4L_312D"
   model = AutoModelForQuestionAnswering.from_pretrained(model_key)
   tokenizer = AutoTokenizer.from_pretrained(model_key)
 
   print_task_1_3_1(dataset)
 
-  def tokenization(file):
-    return tokenizer(file['context'], file[''], padding="max_length", max_length=512, truncation=True) # TODO: truncation only on the context
+  def tokenization_w_truncation(text):
+    return tokenizer(text, padding="max_length", max_length=512, truncation=True)
 
-  tokenized_dataset = dataset.map(tokenization, batched=True) # use map function to quickly tokenize batches of examples
+  def tokenization_wo_truncation(text):
+    return tokenizer(text, padding="max_length", max_length=512, truncation=False)
 
+  exit(0)
+  tokenized_dataset = OrderedDict()
+  tokenized_dataset['train'] = dataset['train']['context'].map(tokenization, batched=True) # use map function to quickly tokenize batches of examples
+ 
   print(tokenized_dataset)
+
+  # original hyper parameters
+  original_hps = {
+    'train_batch_size': 16,
+    'eval_batch_size': 32,
+    'epochs': 1,
+    'weight_decay': 0.01,
+    'optimizer': AdamW(model.parameters(), lr=1e-5),
+    'n_warm_up_steps': 0
+  }
+
+  device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
+  print(f"using device: {device}")
+  model.to(device)
+
+
+  tokenized_dataset.set_format("torch")
+
+  dataset_train = tokenized_dataset["train"].shuffle(seed=123).select(range(2000))
+  dataset_validation = tokenized_dataset["validation"].shuffle(seed=123).select(range(200))
+
+  dataloader_train = DataLoader(dataset_train, shuffle=True, batch_size=8)
+  dataloader_validation = DataLoader(dataset_validation, shuffle=True, batch_size=8)
+
+  def train(dataloader):
+    model.train()
+    num_epochs = 4# TODO: set back to 4
+    num_training_steps = num_epochs * len(dataloader)
+    progress_bar = tqdm(range(num_training_steps))
+
+    loss_history = list()
+    f1_history = list()
+    accuracy_history = list()
+
+    best_f1 = 0
+
+    for epoch in range(num_epochs):
+      for batch in dataloader:
+        batch = {k: v.to(device) for k, v in batch.items()}
+        outputs = model(**batch)
+        loss = outputs.loss
+
+        loss_history.append(loss.item())
+
+        loss.backward()
+
+        optimizer.step()
+        optimizer.zero_grad()
+        progress_bar.update(1)
+
+      # evaluate model after each epoch
+      f1, accuracy = evaluate(dataloader_validation)
+      f1_history.append(f1)
+      accuracy_history.append(accuracy)
+
+      if f1 > best_f1:
+        print(f"epoch's f1 ({f1} is higher than best_f1 ({best_f1}) -> saving model")
+        model.save_pretrained('model_checkpoint/')
+        best_f1 = f1
+
+    return loss_history, f1_history, accuracy_history
+
+
+
+
