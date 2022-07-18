@@ -31,8 +31,8 @@ def print_task_1_3_1(dataset):
 if __name__ == '__main__':
   # loading the dataset
   dataset = load_dataset('json', data_files={
-    'train': 'datasets/train_TriviaQA-web.jsonl.gz_prepared.jsonl', 
-    'test': 'datasets/dev_TriviaQA-web.jsonl.gz_prepared.jsonl'
+    'train': 'datasets/train_TriviaQA-web.jsonl_converted.jsonl', 
+    'test': 'datasets/dev_TriviaQA-web.jsonl_converted.jsonl'
   })
   print(dataset)
 
@@ -41,8 +41,9 @@ if __name__ == '__main__':
   model_key = "huawei-noah/TinyBERT_General_4L_312D"
   model = AutoModelForQuestionAnswering.from_pretrained(model_key)
   tokenizer = AutoTokenizer.from_pretrained(model_key)
+  #exit(0)
 
-  print_task_1_3_1(dataset)
+  #print_task_1_3_1(dataset)
 
   def tokenization_w_truncation(text):
     return tokenizer(text, padding="max_length", max_length=512, truncation=True)
@@ -50,9 +51,11 @@ if __name__ == '__main__':
   def tokenization_wo_truncation(text):
     return tokenizer(text, padding="max_length", max_length=512, truncation=False)
 
-  exit(0)
-  tokenized_dataset = OrderedDict()
-  tokenized_dataset['train'] = dataset['train']['context'].map(tokenization, batched=True) # use map function to quickly tokenize batches of examples
+  dataset['train'] = dataset['train'].map(tokenization_w_truncation, batched=True)
+  dataset['train']['question'] = dataset['train']['context'].map(tokenization_w_truncation, batched=True)
+  dataset['train']['context'] = dataset['train']['context'].map(tokenization_w_truncation, batched=True)
+  dataset['train']['context'] = dataset['train']['context'].map(tokenization_w_truncation, batched=True)
+  dataset['train']['context'] = dataset['train']['context'].map(tokenization_w_truncation, batched=True) # use map function to quickly tokenize batches of examples
  
   print(tokenized_dataset)
 
