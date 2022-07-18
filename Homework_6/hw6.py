@@ -26,6 +26,43 @@ def print_task_1_3_1(dataset):
 
 
 
+def train(dataloader, config):
+  model.train()
+  num_training_steps = config['epochs'] * len(dataloader)
+  progress_bar = tqdm(range(num_training_steps))
+
+  loss_history = list()
+  f1_history = list()
+  accuracy_history = list()
+
+  best_f1 = 0
+
+  for epoch in range(config['epochs']):
+    for batch in dataloader:
+      batch = {k: v.to(device) for k, v in batch.items()}
+      outputs = model(**batch)
+      loss = outputs.loss
+
+      loss_history.append(loss.item())
+
+      loss.backward()
+
+      config['optimizer'].step()
+      config['optimizer'].zero_grad()
+      progress_bar.update(1)
+
+    # evaluate model after each epoch
+    #f1, accuracy = evaluate(dataloader_test)
+    #f1_history.append(f1)
+    #accuracy_history.append(accuracy)
+
+    # if f1 > best_f1:
+    #   print(f"epoch's f1 ({f1} is higher than best_f1 ({best_f1}) -> saving model")
+    #   model.save_pretrained('model_checkpoint/')
+    #   best_f1 = f1
+
+  #return loss_history, f1_history, accuracy_history
+
 
 
 if __name__ == '__main__':
@@ -34,33 +71,27 @@ if __name__ == '__main__':
     'train': 'datasets/train_TriviaQA-web.jsonl_converted.jsonl', 
     'test': 'datasets/dev_TriviaQA-web.jsonl_converted.jsonl'
   })
-  print(dataset)
+  #print(dataset)
 
   torch.manual_seed(0) # set manual seed for reproducibility
 
   model_key = "huawei-noah/TinyBERT_General_4L_312D"
   model = AutoModelForQuestionAnswering.from_pretrained(model_key)
   tokenizer = AutoTokenizer.from_pretrained(model_key)
-  #exit(0)
 
   #print_task_1_3_1(dataset)
 
-  def tokenization_w_truncation(text):
-    return tokenizer(text, padding="max_length", max_length=512, truncation=True)
+  def tokenization(dataset):
+    return tokenizer(dataset['context'], dataset['question'], dataset['answers'], padding="max_length", max_length=512, truncation="only_first")
 
-  def tokenization_wo_truncation(text):
-    return tokenizer(text, padding="max_length", max_length=512, truncation=False)
-
-  dataset['train'] = dataset['train'].map(tokenization_w_truncation, batched=True)
-  dataset['train']['question'] = dataset['train']['context'].map(tokenization_w_truncation, batched=True)
-  dataset['train']['context'] = dataset['train']['context'].map(tokenization_w_truncation, batched=True)
-  dataset['train']['context'] = dataset['train']['context'].map(tokenization_w_truncation, batched=True)
-  dataset['train']['context'] = dataset['train']['context'].map(tokenization_w_truncation, batched=True) # use map function to quickly tokenize batches of examples
+  # map iterates over train and test
+  dataset = dataset.map(tokenization, batched=True)
+  exit(0)
  
-  print(tokenized_dataset)
+  #print(dataset)
 
   # original hyper parameters
-  original_hps = {
+  original_config = {
     'train_batch_size': 16,
     'eval_batch_size': 32,
     'epochs': 1,
@@ -74,52 +105,13 @@ if __name__ == '__main__':
   model.to(device)
 
 
-  tokenized_dataset.set_format("torch")
+  dataset.set_format("torch")
 
-  dataset_train = tokenized_dataset["train"].shuffle(seed=123).select(range(2000))
-  dataset_validation = tokenized_dataset["validation"].shuffle(seed=123).select(range(200))
+  #dataset_train = tokenized_dataset["train"].shuffle(seed=123).select(range(2000))
+  #dataset_validation = tokenized_dataset["validation"].shuffle(seed=123).select(range(200))
 
-  dataloader_train = DataLoader(dataset_train, shuffle=True, batch_size=8)
-  dataloader_validation = DataLoader(dataset_validation, shuffle=True, batch_size=8)
+  dataloader_train = DataLoader(dataset['train'], shuffle=True, batch_size=8)
+  dataloader_test = DataLoader(dataset['test'], shuffle=True, batch_size=8)
 
-  def train(dataloader):
-    model.train()
-    num_epochs = 4# TODO: set back to 4
-    num_training_steps = num_epochs * len(dataloader)
-    progress_bar = tqdm(range(num_training_steps))
-
-    loss_history = list()
-    f1_history = list()
-    accuracy_history = list()
-
-    best_f1 = 0
-
-    for epoch in range(num_epochs):
-      for batch in dataloader:
-        batch = {k: v.to(device) for k, v in batch.items()}
-        outputs = model(**batch)
-        loss = outputs.loss
-
-        loss_history.append(loss.item())
-
-        loss.backward()
-
-        optimizer.step()
-        optimizer.zero_grad()
-        progress_bar.update(1)
-
-      # evaluate model after each epoch
-      f1, accuracy = evaluate(dataloader_validation)
-      f1_history.append(f1)
-      accuracy_history.append(accuracy)
-
-      if f1 > best_f1:
-        print(f"epoch's f1 ({f1} is higher than best_f1 ({best_f1}) -> saving model")
-        model.save_pretrained('model_checkpoint/')
-        best_f1 = f1
-
-    return loss_history, f1_history, accuracy_history
-
-
-
-
+  train(dataloader_train, original_config)
+  print("hey!")
