@@ -75,7 +75,7 @@ def convert_dataset(file_in, file_out):
       
       for answer in qa['detected_answers']:
         answers['text'].append(answer['text'])
-        answers['answer_start'].append(answer['char_spans'][0])
+        answers['answer_start'].append(answer['char_spans'][0][0])
 
       new_example = json.dumps({
         'id': id,
