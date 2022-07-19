@@ -3,9 +3,10 @@ import copy
 import gzip
 from tqdm.auto import tqdm
 
-
+# DEPRECATED
 def prepare_dataset(filepath):
   '''
+  DEPRECATED
   Converts all integers in 
   ['qas'][:][''question_tokens'][1] AND
   ['context_tokens'][:][1[]

@@ -26,6 +26,31 @@ def print_task_1_3_1(dataset):
 
 
 
+def evaluate(dataloader):
+  model.eval()
+
+  labels = []
+  predictions = []
+
+  for batch in dataloader:
+      batch = {k: v.to(device) for k, v in batch.items()}
+      with torch.no_grad():
+          outputs = model(**batch)
+
+      logits = outputs.logits
+
+      # copy tensors to cpu for metric calc
+      labels.append(batch['labels'].cpu())
+      predictions.append(torch.argmax(logits, dim=-1).cpu())
+
+  labels = np.concatenate(labels)
+  predictions = np.concatenate(predictions)
+
+  f1 = f1_score(labels, predictions)
+  accuracy = accuracy_score(labels, predictions)
+
+  return f1, accuracy
+
 def train(dataloader, config):
   model.train()
   num_training_steps = config['epochs'] * len(dataloader)
@@ -52,41 +77,47 @@ def train(dataloader, config):
       progress_bar.update(1)
 
     # evaluate model after each epoch
-    #f1, accuracy = evaluate(dataloader_test)
-    #f1_history.append(f1)
-    #accuracy_history.append(accuracy)
+    f1, accuracy = evaluate(dataloader['test'])
+    f1_history.append(f1)
+    accuracy_history.append(accuracy)
 
-    # if f1 > best_f1:
-    #   print(f"epoch's f1 ({f1} is higher than best_f1 ({best_f1}) -> saving model")
-    #   model.save_pretrained('model_checkpoint/')
-    #   best_f1 = f1
+    if f1 > best_f1:
+      print(f"epoch's f1 ({f1} is higher than best_f1 ({best_f1}) -> saving model")
+      model.save_pretrained('model_checkpoint/')
+      best_f1 = f1
 
   #return loss_history, f1_history, accuracy_history
 
 
 
 if __name__ == '__main__':
+  torch.manual_seed(0) # set manual seed for reproducibility
+  model_key = "huawei-noah/TinyBERT_General_4L_312D"
+
   # loading the dataset
   dataset = load_dataset('json', data_files={
     'train': 'datasets/train_TriviaQA-web.jsonl_converted.jsonl', 
     'test': 'datasets/dev_TriviaQA-web.jsonl_converted.jsonl'
   })
-  #print(dataset)
 
-  torch.manual_seed(0) # set manual seed for reproducibility
+  print(dataset['train'][0]['answers'])
 
-  model_key = "huawei-noah/TinyBERT_General_4L_312D"
-  model = AutoModelForQuestionAnswering.from_pretrained(model_key)
   tokenizer = AutoTokenizer.from_pretrained(model_key)
+
+  def tokenization(dataset):
+    return tokenizer(dataset['context'], dataset['question'], padding="max_length", max_length=512, truncation="only_first")
+  dataset = dataset.map(tokenization, batched=True)
+
+  # map iterates over train and test
+
+  model = AutoModelForQuestionAnswering.from_pretrained(model_key)
+
 
   #print_task_1_3_1(dataset)
 
-  def tokenization(dataset):
-    return tokenizer(dataset['context'], dataset['question'], dataset['answers'], padding="max_length", max_length=512, truncation="only_first")
 
-  # map iterates over train and test
-  dataset = dataset.map(tokenization, batched=True)
-  exit(0)
+
+  #exit(0)
  
   #print(dataset)
 
@@ -114,4 +145,3 @@ if __name__ == '__main__':
   dataloader_test = DataLoader(dataset['test'], shuffle=True, batch_size=8)
 
   train(dataloader_train, original_config)
-  print("hey!")
